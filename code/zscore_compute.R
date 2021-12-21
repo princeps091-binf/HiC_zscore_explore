@@ -23,7 +23,7 @@ cl_res<-"100kb"
 chr_dat<-hic_dat_in(dat_file,cl_res,chromo)
 hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat)
 pred_vec<-predict(hic_gam,newdata = chr_dat)
-#Compute upper and lower bound
+#Compute zscore and predicted HiC magnitude
 chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig2)
 #-----------------------------------------
 # visualisation of matrix
