@@ -48,7 +48,8 @@ full_f_mat<-function(cl_mat,res,x_col){
   cl_mat$alter_id<-id_conv[as.character(cl_mat$X2)]
   
   chr_mat<-sparseMatrix(i=cl_mat$ego_id,cl_mat$alter_id,x=as.numeric(cl_mat[[x_col]]),symmetric = T)
-  
+  dimnames(chr_mat)<-list(names(id_conv),names(id_conv))
+  return(chr_mat)
 }
 
 chr_mat<-full_f_mat(chr_dat,res_num[cl_res],"zscore")
@@ -61,3 +62,12 @@ chr_dist_mat[is.na(chr_dist_mat)]<-3
 chr_dist_mat<-as.dist(chr_dist_mat)
 o <- seriate(chr_dist_mat,method = "HC")
 image(as.matrix(chr_mat)[get_order(o),get_order(o)],col=viridis(100))
+#-------------------------------
+#Produce the eigenvector and corresponding re-ordering
+chr_cor_mat<-cor(as.matrix(chr_mat),use = "na.or.complete")
+chr_cor_mat[is.na(chr_cor_mat)]<-0
+cor_mat_svd<-svd(chr_cor_mat,nv = 2,nu=2)
+eigen_tbl<-tibble(bin=as.numeric(rownames(chr_cor_mat)),eigen1=cor_mat_svd$u[,1]) %>%   
+  mutate(ID=1:n()) %>% 
+  arrange(eigen1) 
+image(as.matrix(chr_mat)[eigen_tbl$ID,eigen_tbl$ID],col=viridis(100))
