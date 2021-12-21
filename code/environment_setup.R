@@ -1,0 +1,2 @@
+library(renv)
+renv::init()
