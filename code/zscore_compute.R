@@ -19,8 +19,8 @@ hic_dat_in<-function(dat_file,cl_res,chromo){
   return(chr_dat%>%mutate(X3=as.numeric(X3))%>%filter(!(is.nan(X3)))%>%filter(X1!=X2)%>%mutate(d=abs(X1-X2))%>%mutate(lw=log10(X3),ld=log10(d)))
 }
 dat_file<-"~/Documents/multires_bhicect/data/HMEC/"
-chromo<-"chr2"
-cl_res<-"1Mb"
+chromo<-"chr22"
+cl_res<-"100kb"
 
 chr_dat<-hic_dat_in(dat_file,cl_res,chromo)
 hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat)
@@ -31,7 +31,7 @@ chr_dat<-chr_dat%>%mutate(dist=1/(zscore + abs(min(zscore)-1)))
 
 chr_dat %>% ggplot(.,aes(dist))+geom_histogram()
 chr_dat %>% ggplot(.,aes(dist,zscore))+geom_point()
-
+#-----------------------------------------
 #-----------------------------------------
 # visualisation of matrix
 full_f_mat<-function(cl_mat,res,x_col){
@@ -60,10 +60,11 @@ chr_dist_mat<-as.dist(as.matrix(full_f_mat(chr_dat,res_num[cl_res],"dist")))
 chr_dist_mat<-(1-cor(as.matrix(chr_mat)))
 chr_dist_mat[is.na(chr_dist_mat)]<-3
 chr_dist_mat<-as.dist(chr_dist_mat)
-o <- seriate(chr_dist_mat,method = "HC")
+o <- seriate(chr_dist_mat,method = "MDS_metric")
 image(as.matrix(chr_mat)[get_order(o),get_order(o)],col=viridis(100))
 #-------------------------------
-#Produce the eigenvector and corresponding re-ordering
+#Produce the eigenvector and corresponding re-ordering 
+# => Clear correspondence up til sign inversion with Spectral/MDS-metric re-ordering of bins through seriation package
 chr_cor_mat<-cor(as.matrix(chr_mat),use = "na.or.complete")
 chr_cor_mat[is.na(chr_cor_mat)]<-0
 cor_mat_svd<-svd(chr_cor_mat,nv = 2,nu=2)
