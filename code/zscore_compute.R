@@ -2,6 +2,7 @@ library(tidyverse)
 library(parallel)
 library(furrr)
 library(mgcv)
+library(Matrix)
 
 options(scipen = 999999999)
 res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
@@ -27,3 +28,22 @@ pred_vec<-predict(hic_gam,newdata = chr_dat)
 chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig2)
 #-----------------------------------------
 # visualisation of matrix
+full_f_mat<-function(cl_mat,res){
+  
+  range_5kb<-range(unique(c(cl_mat$X1,cl_mat$X2)))
+  bin_5kb<-seq(range_5kb[1],range_5kb[2],by=res)
+  #add the bins not present in original Hi-C dataset
+  #miss_bin<-bin_5kb[which(!(bin_5kb %in% unique(c(mat_df$X1,mat_df$X2))))]
+  
+  id_conv<-seq_along(bin_5kb)
+  names(id_conv)<-bin_5kb
+  
+  cl_mat$ego_id<-id_conv[as.character(cl_mat$X1)]
+  cl_mat$alter_id<-id_conv[as.character(cl_mat$X2)]
+  
+  chr_mat<-sparseMatrix(i=cl_mat$ego_id,cl_mat$alter_id,x=as.numeric(cl_mat$zscore),symmetric = T)
+  
+}
+
+chr_mat<-full_f_mat(chr_dat,res_num[cl_res])
+image(as.matrix(chr_mat))

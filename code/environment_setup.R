@@ -4,4 +4,5 @@ renv::init(project = "~/Documents/multires_bhicect/HiC_enrichment/HiC_zscore_exp
 renv::install("tidyverse")
 renv::install("furrr")
 renv::install("Matrix")
+renv::install("viridis")
 renv::snapshot()
