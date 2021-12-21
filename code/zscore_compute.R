@@ -3,7 +3,8 @@ library(parallel)
 library(furrr)
 library(mgcv)
 library(Matrix)
-
+library(viridis)
+library(seriation)
 options(scipen = 999999999)
 res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
 res_num <- c(1e6,5e5,1e5,5e4,1e4,5e3)
@@ -18,17 +19,22 @@ hic_dat_in<-function(dat_file,cl_res,chromo){
   return(chr_dat%>%mutate(X3=as.numeric(X3))%>%filter(!(is.nan(X3)))%>%filter(X1!=X2)%>%mutate(d=abs(X1-X2))%>%mutate(lw=log10(X3),ld=log10(d)))
 }
 dat_file<-"~/Documents/multires_bhicect/data/HMEC/"
-chromo<-"chr22"
-cl_res<-"100kb"
+chromo<-"chr2"
+cl_res<-"1Mb"
 
 chr_dat<-hic_dat_in(dat_file,cl_res,chromo)
 hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat)
 pred_vec<-predict(hic_gam,newdata = chr_dat)
 #Compute zscore and predicted HiC magnitude
 chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig2)
+chr_dat<-chr_dat%>%mutate(dist=1/(zscore + abs(min(zscore)-1)))
+
+chr_dat %>% ggplot(.,aes(dist))+geom_histogram()
+chr_dat %>% ggplot(.,aes(dist,zscore))+geom_point()
+
 #-----------------------------------------
 # visualisation of matrix
-full_f_mat<-function(cl_mat,res){
+full_f_mat<-function(cl_mat,res,x_col){
   
   range_5kb<-range(unique(c(cl_mat$X1,cl_mat$X2)))
   bin_5kb<-seq(range_5kb[1],range_5kb[2],by=res)
@@ -41,9 +47,17 @@ full_f_mat<-function(cl_mat,res){
   cl_mat$ego_id<-id_conv[as.character(cl_mat$X1)]
   cl_mat$alter_id<-id_conv[as.character(cl_mat$X2)]
   
-  chr_mat<-sparseMatrix(i=cl_mat$ego_id,cl_mat$alter_id,x=as.numeric(cl_mat$zscore),symmetric = T)
+  chr_mat<-sparseMatrix(i=cl_mat$ego_id,cl_mat$alter_id,x=as.numeric(cl_mat[[x_col]]),symmetric = T)
   
 }
 
-chr_mat<-full_f_mat(chr_dat,res_num[cl_res])
-image(as.matrix(chr_mat))
+chr_mat<-full_f_mat(chr_dat,res_num[cl_res],"zscore")
+image(as.matrix(chr_mat),col=viridis(100))
+image(cor(as.matrix(chr_mat)),col=viridis(100))
+
+chr_dist_mat<-as.dist(as.matrix(full_f_mat(chr_dat,res_num[cl_res],"dist")))
+chr_dist_mat<-(1-cor(as.matrix(chr_mat)))
+chr_dist_mat[is.na(chr_dist_mat)]<-3
+chr_dist_mat<-as.dist(chr_dist_mat)
+o <- seriate(chr_dist_mat,method = "HC")
+image(as.matrix(chr_mat)[get_order(o),get_order(o)],col=viridis(100))
