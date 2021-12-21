@@ -28,7 +28,7 @@ hic_oe_dat_in<-function(dat_file,cl_res,chromo){
 
 dat_file<-"~/Documents/multires_bhicect/data/H1/"
 chromo<-"chr22"
-cl_res<-"100kb"
+cl_res<-"1Mb"
 chr_dat<-hic_dat_in(dat_file,cl_res,chromo)
 hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat)
 pred_vec<-predict(hic_gam,newdata = chr_dat)
@@ -37,7 +37,7 @@ chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig
 
 oe_dat_file<-"~/Documents/multires_bhicect/V3/data/H1/OE/"
 chromo<-"chr22"
-cl_res<-"100kb"
+cl_res<-"1Mb"
 chr_oe_dat<-hic_oe_dat_in(oe_dat_file,cl_res,chromo)
 chr_oe_dat<-chr_oe_dat %>% dplyr::rename(oe=X3)
 chr_dat %>% full_join(.,chr_oe_dat) %>% 

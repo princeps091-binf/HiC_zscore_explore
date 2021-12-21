@@ -32,7 +32,6 @@ chr_dat<-chr_dat%>%mutate(dist=1/(zscore + abs(min(zscore)-1)))
 chr_dat %>% ggplot(.,aes(dist))+geom_histogram()
 chr_dat %>% ggplot(.,aes(dist,zscore))+geom_point()
 #-----------------------------------------
-#-----------------------------------------
 # visualisation of matrix
 full_f_mat<-function(cl_mat,res,x_col){
   
