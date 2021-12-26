@@ -78,3 +78,5 @@ eigen_tbl<-tibble(bin=as.numeric(rownames(chr_cor_mat)),eigen1=cor_mat_svd$u[,1]
   mutate(ID=1:n()) %>% 
   arrange(eigen1) 
 image(chr_cor_mat[eigen_tbl$ID,eigen_tbl$ID],col=viridis(100))
+
+eigen_tbl %>% inner_join(.,Spectral_cl_tbl) %>% ggplot(.,aes(eigen1,eigen2))+geom_point()
