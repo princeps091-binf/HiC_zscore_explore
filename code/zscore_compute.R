@@ -50,10 +50,20 @@ full_f_mat<-function(cl_mat,res,x_col){
   dimnames(chr_mat)<-list(names(id_conv),names(id_conv))
   return(chr_mat)
 }
+build_png_fn<-function(img_mat,out_file,px_res,dim){
+  png(out_file, width =dim,height = dim,units = 'mm',type='cairo',res=px_res)
+  par(mar = c(0, 0, 0,0))
+  plot.new()
+  image(img_mat,col=viridis(100))
+  dev.off()
+}
 
 chr_mat<-full_f_mat(chr_dat,res_num[cl_res],"zscore")
 image(as.matrix(chr_mat),col=viridis(100))
+build_png_fn(as.matrix(chr_mat),"~/Documents/multires_bhicect/weeklies/weekly46/img/zscore_chr22.png",4000,40)
+
 image(cor(as.matrix(chr_mat)),col=viridis(100))
+build_png_fn(cor(as.matrix(chr_mat)),"~/Documents/multires_bhicect/weeklies/weekly46/img/zscore_cor_chr1.png",4000,40)
 
 chr_dist_mat<-as.dist(as.matrix(full_f_mat(chr_dat,res_num[cl_res],"dist")))
 chr_dist_mat<-(1-cor(as.matrix(chr_mat)))
@@ -62,6 +72,7 @@ chr_dist_mat<-as.dist(chr_dist_mat)
 o <- seriate(chr_dist_mat,method = "HC")
 image(as.matrix(chr_mat)[get_order(o),get_order(o)],col=viridis(100))
 image(cor(as.matrix(chr_mat))[get_order(o),get_order(o)],col=viridis(100))
+build_png_fn(cor(as.matrix(chr_mat))[get_order(o),get_order(o)],"~/Documents/multires_bhicect/weeklies/weekly46/img/zscore_cor_HC_chr1.png",4000,40)
 
 #-------------------------------
 #Produce the eigenvector and corresponding re-ordering 
@@ -74,3 +85,4 @@ eigen_tbl<-tibble(bin=as.numeric(rownames(chr_cor_mat)),eigen1=cor_mat_svd$u[,1]
   arrange(eigen1) 
 image(as.matrix(chr_mat)[eigen_tbl$ID,eigen_tbl$ID],col=viridis(100))
 image(chr_cor_mat[eigen_tbl$ID,eigen_tbl$ID],col=viridis(100))
+build_png_fn(chr_cor_mat[eigen_tbl$ID,eigen_tbl$ID],"~/Documents/multires_bhicect/weeklies/weekly46/img/zscore_cor_PCA_chr1.png",4000,40)
