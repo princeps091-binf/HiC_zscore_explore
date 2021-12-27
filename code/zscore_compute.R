@@ -19,7 +19,7 @@ hic_dat_in<-function(dat_file,cl_res,chromo){
   return(chr_dat%>%mutate(X3=as.numeric(X3))%>%filter(!(is.nan(X3)))%>%filter(X1!=X2)%>%mutate(d=abs(X1-X2))%>%mutate(lw=log10(X3),ld=log10(d)))
 }
 dat_file<-"~/Documents/multires_bhicect/data/HMEC/"
-chromo<-"chr1"
+chromo<-"chr22"
 cl_res<-"100kb"
 
 chr_dat<-hic_dat_in(dat_file,cl_res,chromo)
@@ -58,9 +58,9 @@ build_png_fn<-function(img_mat,out_file,px_res,dim){
   dev.off()
 }
 
-chr_mat<-full_f_mat(chr_dat,res_num[cl_res],"zscore")
+chr_mat<-full_f_mat(chr_dat,res_num[cl_res],"X3")
 image(as.matrix(chr_mat),col=viridis(100))
-build_png_fn(as.matrix(chr_mat),"~/Documents/multires_bhicect/weeklies/weekly46/img/zscore_chr22.png",4000,40)
+build_png_fn(as.matrix(chr_mat),"~/Documents/multires_bhicect/weeklies/weekly46/img/HiC_chr22.png",4000,40)
 
 image(cor(as.matrix(chr_mat)),col=viridis(100))
 build_png_fn(cor(as.matrix(chr_mat)),"~/Documents/multires_bhicect/weeklies/weekly46/img/zscore_cor_chr1.png",4000,40)
