@@ -91,7 +91,7 @@ power_trans_fn<-function(x){
 }
 chr_dat<-chr_dat %>% power_trans_fn()
 chr_pow_mat<-full_f_mat(chr_dat,res_num[cl_res],"weight")
-chr_raw_mat<-full_f_mat(chr_dat,res_num[cl_res],"X3")
+chr_raw_mat<-full_f_mat(chr_dat,res_num[cl_res],"lw")
 
 BHiCect_cl_tbl<-lp_fn(chr_pow_mat)$vectors
 BHiCect_cl_tbl<-BHiCect_cl_tbl %>% 
@@ -100,3 +100,7 @@ BHiCect_cl_tbl<-BHiCect_cl_tbl %>%
   arrange(eigen2) 
 
 image(as.matrix(chr_pow_mat)[BHiCect_cl_tbl$ID,BHiCect_cl_tbl$ID],col=viridis(100))
+image(as.matrix(chr_pow_mat),col=viridis(100))
+
+image(chr_cor_mat,col=viridis(100))
+image(chr_cor_mat[BHiCect_cl_tbl$ID,BHiCect_cl_tbl$ID],col=viridis(100))
