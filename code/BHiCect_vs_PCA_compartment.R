@@ -3,6 +3,7 @@ library(mgcv)
 library(Matrix)
 library(viridis)
 library(seriation)
+library(caret)
 options(scipen = 999999999)
 res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
 res_num <- c(1e6,5e5,1e5,5e4,1e4,5e3)
@@ -18,7 +19,7 @@ hic_dat_in<-function(dat_file,cl_res,chromo){
   return(chr_dat%>%mutate(X3=as.numeric(X3))%>%filter(!(is.nan(X3)))%>%filter(X1!=X2)%>%mutate(d=abs(X1-X2))%>%mutate(lw=log10(X3),ld=log10(d)))
 }
 dat_file<-"~/Documents/multires_bhicect/data/HMEC/"
-chromo<-"chr1"
+chromo<-"chr22"
 cl_res<-"100kb"
 
 chr_dat<-hic_dat_in(dat_file,cl_res,chromo)
@@ -26,7 +27,7 @@ hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat)
 pred_vec<-predict(hic_gam,newdata = chr_dat)
 #Compute zscore and predicted HiC magnitude
 chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig2)
-chr_dat<-chr_dat%>%mutate(dist=1/(zscore + abs(min(zscore)-1)))
+rm(pred_vec,hic_gam)
 #-----------------------------------------
 ## Visualisation
 ### Build the matrix
@@ -80,3 +81,22 @@ eigen_tbl<-tibble(bin=as.numeric(rownames(chr_cor_mat)),eigen1=cor_mat_svd$u[,1]
 image(chr_cor_mat[eigen_tbl$ID,eigen_tbl$ID],col=viridis(100))
 
 eigen_tbl %>% inner_join(.,Spectral_cl_tbl) %>% ggplot(.,aes(eigen1,eigen2))+geom_point()
+#-----------------------------------------
+## Compare with the original spcetral separation done by current BHiCect method
+power_trans_fn<-function(x){
+  preprocessParams <- BoxCoxTrans(x$X3,na.rm = T)
+  x <- x %>% mutate(weight=predict(preprocessParams, x$X3))
+  x <- x %>% mutate(weight=weight+(1-min(weight,na.rm = T)))
+  return(x)
+}
+chr_dat<-chr_dat %>% power_trans_fn()
+chr_pow_mat<-full_f_mat(chr_dat,res_num[cl_res],"weight")
+chr_raw_mat<-full_f_mat(chr_dat,res_num[cl_res],"X3")
+
+BHiCect_cl_tbl<-lp_fn(chr_pow_mat)$vectors
+BHiCect_cl_tbl<-BHiCect_cl_tbl %>% 
+  rename(eigen2="...1") %>% 
+  mutate(ID=1:n()) %>% 
+  arrange(eigen2) 
+
+image(as.matrix(chr_pow_mat)[BHiCect_cl_tbl$ID,BHiCect_cl_tbl$ID],col=viridis(100))
