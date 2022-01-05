@@ -18,8 +18,8 @@ rao_loop <- read_delim("~/Documents/multires_bhicect/data/GM12878/rao_loop.txt",
 dat_file<-"~/Documents/multires_bhicect/data/GM12878/"
 res_file<-"~/Documents/multires_bhicect/data/GM12878/spec_res/"
 
-chromo<-"chr10"
-rao_chromo<-10
+chromo<-"chr1"
+rao_chromo<-1
 tmp_res<-"5kb"
 
 chr_dat<-hic_dat_in(dat_file,tmp_res,chromo)
