@@ -77,7 +77,7 @@ res_set<- grep('b$',list.files(dat_file),value=T)
 load('~/Documents/multires_bhicect/data/epi_data/HMEC/CAGE/dagger_mres_fdr_01_multi_cagebin_tbl.Rda')
 
 chromo<-"chr15"
-tmp_res<-"5kb"
+tmp_res<-"50kb"
 #Subset corresponding hubs
 tmp_hub_tbl<-dagger_mres_tbl %>% filter(chr==chromo & res==tmp_res)
 #Load the corresponding BHiCect results
@@ -99,6 +99,8 @@ cl_hic_en_fn(chr_dat,cl_bin_l)%>% ggplot(.,aes(hic.en))+geom_histogram()
 
 cl_kind<-table(unlist(lapply(lapply(strsplit(tmp_hub_tbl$node,split="_"),"[",1:2),function(x)paste(x,collapse = "_"))))
 cl_kind_tbl<-tibble(kind=names(cl_kind),n=as.numeric(cl_kind))
+
+
 rn_cl_set<-unlist(lapply(1:nrow(cl_kind_tbl),function(i){
   sample(grep(cl_kind_tbl$kind[i],names(chr_spec_res$cl_member),value = T),cl_kind_tbl$n[i])
 }))
@@ -114,5 +116,11 @@ rn_cl_set<-unlist(lapply(1:nrow(cl_kind_tbl),function(i){
 }))
 rn_cl_l<-chr_spec_res$cl_member[rn_cl_set]
 rn_cl_hic_dat<-cl_hic_dat_fn(chr_dat,rn_cl_l)
-rn_cl_hic_dat %>% 
-  ggplot(.,aes(zscore,group=cl))+geom_density()
+
+chr_dat %>% filter(d %in% cl_dist_set) %>% mutate(set="All") %>% 
+  bind_rows(.,rn_cl_hic_dat %>% mutate(set="Rn")) %>% 
+  bind_rows(.,cl_hic_dat %>% mutate(set="hub")) %>% 
+  
+  ggplot(.,aes(zscore,color=set,group=set))+geom_density()
+
+  
