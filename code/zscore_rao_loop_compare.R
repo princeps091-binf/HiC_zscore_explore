@@ -9,9 +9,7 @@ hic_dat_in<-function(dat_file,cl_res,chromo){
   return(chr_dat%>%mutate(X3=as.numeric(X3))%>%filter(!(is.nan(X3)))%>%filter(X1!=X2)%>%mutate(d=abs(X1-X2))%>%mutate(lw=log10(X3),ld=log10(d)))
 }
 #-----------------------------------------
-rao_loop <- read_delim("~/Documents/multires_bhicect/data/GM12878/rao_loop.txt", 
-                       +     delim = "\t", escape_double = FALSE, 
-                       +     trim_ws = TRUE)
+rao_loop <- read_delim("~/Documents/multires_bhicect/data/GM12878/rao_loop.txt",  delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
 #-----------------------------------------
 #Load the considered HiC and BHiCect data
