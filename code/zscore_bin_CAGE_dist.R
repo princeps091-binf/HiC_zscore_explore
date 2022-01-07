@@ -98,23 +98,6 @@ compute_chr_res_zscore_fn<-function(dat_file,cl_res,chromo,max.dist,res_num){
 }  
 
 ## Loop through chromosomes and resolution to compute zscore and extrct hub HiC data
-chr_res_combo<-chr_res_tbl %>% distinct(chr,res)
-cl_dist_fn<-function(chr_dat,cl_bin_l){
-  fn_env<-environment()
-  cl<-makeCluster(5)
-  clusterEvalQ(cl, {
-    library(dplyr)
-    print("node ready")
-  })
-  clusterExport(cl,c("chr_dat","cl_bin_l"),envir=fn_env)
-  cl_dist<-unique(unlist(parLapply(cl,cl_bin_l,function(x){
-    tmp_cl_bin<-as.numeric(x)
-    return(chr_dat%>%filter(X1 %in% tmp_cl_bin & X2 %in% tmp_cl_bin))
-  })))
-  stopCluster(cl)
-  rm(cl)
-  return(cl_dist)
-}
 chr_hic_dat_l<-vector('list',length(unique(chr_res_tbl$chr)))
 names(chr_hic_dat_l)<-unique(chr_res_tbl$chr)
 
@@ -124,7 +107,7 @@ for (chromo in unique(chr_res_tbl$chr)){
   names(tmp_res_l)<-tmp_res_set
   #load the cluster results
   for (cl_res in tmp_res_set){
-    message(chromo,cl_res)
+    message(chromo," : ",cl_res)
     chr_cl_tbl<-chr_res_tbl %>% filter(chr==chromo & res == cl_res) %>% dplyr::select(chr,res,node,bins)
     max.dist<-chr_cl_tbl %>% mutate(max.dist=map_dbl(bins,function(x){
       diff(range(as.numeric(x)))
@@ -143,3 +126,6 @@ for (chromo in unique(chr_res_tbl$chr)){
   chr_hic_dat_l[[chromo]]<-do.call(bind_rows,tmp_res_l)
   
 }
+chr_hic_dat_tbl<-do.call(bind_rows,chr_hic_dat_l)
+save(chr_hic_dat_tbl,file="./data/hub_hic_tbl.Rda")
+save(chr_res_tbl,file="./data/hub_cage_tbl.Rda")
