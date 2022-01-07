@@ -129,3 +129,30 @@ for (chromo in unique(chr_res_tbl$chr)){
 chr_hic_dat_tbl<-do.call(bind_rows,chr_hic_dat_l)
 save(chr_hic_dat_tbl,file="./data/hub_hic_tbl.Rda")
 save(chr_res_tbl,file="./data/hub_cage_tbl.Rda")
+#---------------------------------------------------------------------------------------
+load("./data/hub_hic_tbl.Rda")
+load("./data/hub_cage_tbl.Rda")
+plan(multisession, workers = 3)
+chr_res_tbl<-chr_res_tbl %>% mutate(cage.bins.vec=future_map(cage_bin_count,function(x){
+  return(x %>% filter(cage.count>0) %>% dplyr::select(bin) %>% unlist)
+}))
+chr_cage_zscore_tbl<-chr_res_tbl %>% dplyr::select(chr,res,node,cage.bins.vec) %>% left_join(.,chr_hic_dat_tbl) %>%
+#  dplyr::slice(1234:1245) %>% 
+  mutate(cage.hic.vec=future_pmap(list(cage.bins.vec,hic.dat),function(cage.bins.vec,hic.dat){
+    hic.dat %>% filter(X1 %in% as.numeric(cage.bins.vec)& X2 %in% as.numeric(cage.bins.vec)) %>% 
+      dplyr::select(zscore) %>% unlist
+  }))
+
+hub_cage_zscore_tbl<-chr_cage_zscore_tbl %>% dplyr::select(res,cage.hic.vec) %>% unnest(cols=c(cage.hic.vec)) %>% 
+  dplyr::rename(zscore=cage.hic.vec) %>% mutate(set='CAGE')
+hub_all_zscore_tbl<-chr_hic_dat_tbl %>% mutate(zscore.vec=future_map(hic.dat,function(x){
+  return(x$zscore)
+})) %>% dplyr::select(res,zscore.vec)%>% unnest(cols=c(zscore.vec)) %>% 
+  dplyr::rename(zscore=zscore.vec) %>% mutate(set='ALL')
+
+hub_cage_zscore_tbl %>% bind_rows(.,hub_all_zscore_tbl) %>% 
+  mutate(res=fct_relevel(res,names(res_num))) %>% 
+  ggplot(.,aes(zscore,color=set))+
+  geom_density()+
+  facet_wrap(res~.,scales="free")
+
