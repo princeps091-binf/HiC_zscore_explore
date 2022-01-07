@@ -71,3 +71,54 @@ chr_res_tbl<-chr_res_tbl %>% mutate(cage_bin_count=future_map(GRange,function(x)
   tmp_vec<-countOverlaps(x,full_cage_Grange)
   return(tibble(bin=start(x),cage.count=tmp_vec))
 }))
+#-------------------------------------------------------------
+## Collect the corresponding hub interaction data with the zscore transformation
+## Utility functions
+hic_dat_in<-function(dat_file,cl_res,chromo){
+  chr_dat <- read_delim(paste0(dat_file,cl_res,"/",chromo,".txt"), 
+                        "\t", escape_double = FALSE, col_names = FALSE, 
+                        trim_ws = TRUE)
+  return(chr_dat%>%mutate(X3=as.numeric(X3))%>%filter(!(is.nan(X3)))%>%filter(X1!=X2)%>%mutate(d=abs(X1-X2))%>%mutate(lw=log10(X3),ld=log10(d)))
+}
+compute_chr_res_zscore_fn<-function(dat_file,cl_res,chromo,max.dist){
+  chr_dat<-hic_dat_in(dat_file,cl_res,chromo) %>% filter(abs(X1-X2)<=max.dist)
+  hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat)
+  pred_vec<-predict(hic_gam,newdata = chr_dat)
+  #Compute zscore and predicted HiC magnitude
+  chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig2)
+  chr_dat<-chr_dat%>%mutate(dist=1/(zscore + abs(min(zscore)-1)))
+  return(chr_dat %>% mutate(res=cl_res,chr=chromo))
+}  
+
+## Loop through chromosomes and resolution to compute zscore and extrct hub HiC data
+chr_res_combo<-chr_res_tbl %>% distinct(chr,res)
+cl_dist_fn<-function(chr_dat,cl_bin_l){
+  fn_env<-environment()
+  cl<-makeCluster(5)
+  clusterEvalQ(cl, {
+    library(dplyr)
+    print("node ready")
+  })
+  clusterExport(cl,c("chr_dat","cl_bin_l"),envir=fn_env)
+  cl_dist<-unique(unlist(parLapply(cl,cl_bin_l,function(x){
+    tmp_cl_bin<-as.numeric(x)
+    return(chr_dat%>%filter(X1 %in% tmp_cl_bin & X2 %in% tmp_cl_bin))
+  })))
+  stopCluster(cl)
+  rm(cl)
+  return(cl_dist)
+}
+
+for (chromo in unique(chr_res_tbl$chr)){
+  tmp_res_set<-chr_res_combo %>% filter(chr==chromo) %>% distinct(res) %>% unlist
+  #load the cluster results
+  for (cl_res in tmp_res_set){
+    chr_cl_tbl<-chr_res_tbl %>% filter(chr==chromo & res == cl_res) %>% dplyr::select(bins)
+    max.dist<-chr_cl_tbl %>% mutate(max.dist=map_dbl(bins,function(x){
+      diff(range(as.numeric(x)))
+    })) %>% summarise(max(max.dist)) %>% unlist
+    chr_dat<-compute_chr_res_zscore_fn(dat_file,cl_res,chromo,max.dist)
+    
+    
+  }  
+}
