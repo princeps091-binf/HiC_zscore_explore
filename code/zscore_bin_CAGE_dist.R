@@ -80,13 +80,20 @@ hic_dat_in<-function(dat_file,cl_res,chromo){
                         trim_ws = TRUE)
   return(chr_dat%>%mutate(X3=as.numeric(X3))%>%filter(!(is.nan(X3)))%>%filter(X1!=X2)%>%mutate(d=abs(X1-X2))%>%mutate(lw=log10(X3),ld=log10(d)))
 }
-compute_chr_res_zscore_fn<-function(dat_file,cl_res,chromo,max.dist){
-  chr_dat<-hic_dat_in(dat_file,cl_res,chromo) %>% filter(abs(X1-X2)<=max.dist)
+compute_chr_res_zscore_fn<-function(dat_file,cl_res,chromo,max.dist,res_num){
+  if(max.dist == res_num[cl_res]){
+    chr_dat<-hic_dat_in(dat_file,cl_res,chromo) 
+    chr_dat<-chr_dat %>% filter(d<=median(chr_dat$d))
+    
+  }  else{
+    
+    chr_dat<-hic_dat_in(dat_file,cl_res,chromo) %>% filter(abs(X1-X2)<=max.dist)
+    
+  }
   hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat)
   pred_vec<-predict(hic_gam,newdata = chr_dat)
   #Compute zscore and predicted HiC magnitude
   chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig2)
-  chr_dat<-chr_dat%>%mutate(dist=1/(zscore + abs(min(zscore)-1)))
   return(chr_dat %>% mutate(res=cl_res,chr=chromo))
 }  
 
@@ -108,17 +115,31 @@ cl_dist_fn<-function(chr_dat,cl_bin_l){
   rm(cl)
   return(cl_dist)
 }
+chr_hic_dat_l<-vector('list',length(unique(chr_res_tbl$chr)))
+names(chr_hic_dat_l)<-unique(chr_res_tbl$chr)
 
 for (chromo in unique(chr_res_tbl$chr)){
   tmp_res_set<-chr_res_combo %>% filter(chr==chromo) %>% distinct(res) %>% unlist
+  tmp_res_l<-vector('list',length(tmp_res_set))
+  names(tmp_res_l)<-tmp_res_set
   #load the cluster results
   for (cl_res in tmp_res_set){
-    chr_cl_tbl<-chr_res_tbl %>% filter(chr==chromo & res == cl_res) %>% dplyr::select(bins)
+    message(chromo,cl_res)
+    chr_cl_tbl<-chr_res_tbl %>% filter(chr==chromo & res == cl_res) %>% dplyr::select(chr,res,node,bins)
     max.dist<-chr_cl_tbl %>% mutate(max.dist=map_dbl(bins,function(x){
       diff(range(as.numeric(x)))
     })) %>% summarise(max(max.dist)) %>% unlist
-    chr_dat<-compute_chr_res_zscore_fn(dat_file,cl_res,chromo,max.dist)
+    chr_dat<-compute_chr_res_zscore_fn(dat_file,cl_res,chromo,max.dist,res_num)
+    cl_bins<-chr_cl_tbl %>% dplyr::select(bins) %>% unnest(cols = c(bins)) %>% distinct() %>% unlist
+    cl_dat<-chr_dat %>% filter(X1 %in% as.numeric(cl_bins) & X2 %in% as.numeric(cl_bins))
+    rm(chr_dat)
     
-    
+    chr_cl_tbl<-chr_cl_tbl %>% mutate(hic.dat=map(bins,function(x){
+      return(cl_dat %>% filter(X1 %in% as.numeric(x) & X2 %in% as.numeric(x)))
+    }))
+    tmp_res_l[[cl_res]]<-chr_cl_tbl
+    rm(chr_cl_tbl,cl_bins,max.dist,chr_cl_tbl)
   }  
+  chr_hic_dat_l[[chromo]]<-do.call(bind_rows,tmp_res_l)
+  
 }
