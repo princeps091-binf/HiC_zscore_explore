@@ -67,9 +67,8 @@ dagger_hub_tbl<-data_tbl_load_fn(candidate_hub_file)
 
 cage_GRange<-data_tbl_load_fn(CAGE_peak_GRange_file)
 
-chromo<-"chr1"
+chromo<-"chr22"
 tmp_res<-"50kb"
-
 chr_spec_res<-data_tbl_load_fn(paste0(res_file,chromo,"_spec_res.Rda"))
 
 chr_dat<-compute_chr_res_zscore_fn(dat_file,tmp_res,chromo,res_num)
@@ -91,5 +90,39 @@ io_hub_dat<-tmp_hub_dat %>% full_join(.,chr_cage_hic_dat %>% dplyr::select(chr,r
 io_hub_dat<-io_hub_dat %>% mutate(hub.io=ifelse(is.na(hub.io),"out",hub.io),zscore=as.numeric(zscore))
 
 io_hub_dat %>% 
+  ggplot(.,aes(zscore,color=hub.io))+
+  geom_density()
+
+
+tmp_res<-"50kb"
+chr_set<-unlist(lapply(strsplit(list.files(paste0(dat_file,tmp_res)),split="\\."),'[',1))
+
+io_dat_l<-lapply(chr_set,function(chromo){
+  message(chromo)
+  chr_spec_res<-data_tbl_load_fn(paste0(res_file,chromo,"_spec_res.Rda"))
+  
+  chr_dat<-compute_chr_res_zscore_fn(dat_file,tmp_res,chromo,res_num)
+  chr_cage_bin_dat<-compute_bin_cage_overlap_fn(dat_file,tmp_res,chromo,cage_GRange,res_num) %>% filter(cage.count>0)
+  chr_cage_hic_dat<-chr_dat %>% filter(X1 %in% chr_cage_bin_dat$bins & X2 %in% chr_cage_bin_dat$bins)
+  
+  tmp_hub<-dagger_hub_tbl %>% 
+    filter(chr==chromo,res==tmp_res) %>% 
+    mutate(bins=chr_spec_res$cl_member[node]) %>% 
+    mutate(bins=map(bins,function(x) as.numeric(x)))
+  
+  tmp_hub<-tmp_hub %>% mutate(hub.cage.zscore=future_map(bins,function(x){
+    chr_cage_hic_dat %>% filter(X1 %in% x & X2 %in% x) %>% dplyr::select(chr,res,X1,X2,zscore)
+  }))
+  
+  tmp_hub_dat<-tmp_hub %>% dplyr::select(hub.cage.zscore) %>% unnest(cols = c(hub.cage.zscore)) %>% mutate(hub.io="hub")
+  
+  io_hub_dat<-tmp_hub_dat %>% full_join(.,chr_cage_hic_dat %>% dplyr::select(chr,res,X1,X2,zscore))
+  io_hub_dat<-io_hub_dat %>% mutate(hub.io=ifelse(is.na(hub.io),"out",hub.io),zscore=as.numeric(zscore))
+  return(io_hub_dat)
+  
+})
+
+io_dat_tbl<-do.call(bind_rows,io_dat_l)
+io_dat_tbl %>% 
   ggplot(.,aes(zscore,color=hub.io))+
   geom_density()
