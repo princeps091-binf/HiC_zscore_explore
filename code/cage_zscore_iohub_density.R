@@ -5,6 +5,7 @@ library(tidyverse)
 library(GenomicRanges)
 library(mgcv)
 library(furrr)
+library(vroom)
 
 options(scipen = 999999999)
 res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
@@ -23,9 +24,7 @@ data_tbl_load_fn<-function(file){
 }
 
 hic_dat_in<-function(dat_file,cl_res,chromo){
-  chr_dat <- read_delim(paste0(dat_file,cl_res,"/",chromo,".txt"), 
-                        "\t", escape_double = FALSE, col_names = FALSE, 
-                        trim_ws = TRUE)
+  chr_dat<-vroom(paste0(dat_file,cl_res,"/",chromo,".txt"),delim = "\t",col_names = F,trim_ws = T,escape_double = F,show_col_types = F)
   return(chr_dat%>%mutate(X3=as.numeric(X3))%>%filter(!(is.nan(X3)))%>%filter(X1!=X2)%>%mutate(d=abs(X1-X2))%>%mutate(lw=log10(X3),ld=log10(d)))
 }
 
@@ -35,23 +34,21 @@ compute_chr_res_zscore_fn<-function(dat_file,cl_res,chromo,res_num){
   pred_vec<-predict(hic_gam,newdata = chr_dat)
   #Compute zscore and predicted HiC magnitude
   chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig2)
-  chr_dat<-chr_dat%>%mutate(dist=1/(zscore + abs(min(zscore)-1)))
   return(chr_dat %>% mutate(res=cl_res,chr=chromo))
 }  
 
-compute_bin_cage_overlap_fn<-function(dat_file,cl_res,chromo,full_cage_Grange,res_num){
-  chr_bin_dat<-hic_dat_in(dat_file,cl_res,chromo) %>% summarise(bins=unique(c(X1,X2))) %>% mutate(chr=chromo,res=cl_res)
-  plan(multisession, workers = 3)
-  
-  chr_bin_dat<-chr_bin_dat %>% mutate(cage.count=unlist(future_pmap(list(chr,bins,res),function(chr,bins,res){
-    bin_GRange<-GRanges(seqnames=chr,
-                        ranges = IRanges(start=as.numeric(bins),
-                                         end=as.numeric(bins)+res_num[res]-1
+compute_bin_cage_overlap_fn<-function(chr_dat,cl_res,chromo,full_cage_Grange,res_num){
+  chr_bin_dat<-chr_dat %>% summarise(bins=unique(c(X1,X2))) %>% mutate(chr=chromo,res=cl_res)
+
+    
+    bin_GRange<-GRanges(seqnames=chr_bin_dat$chr,
+                        ranges = IRanges(start=as.numeric(chr_bin_dat$bins),
+                                         end=as.numeric(chr_bin_dat$bins)+res_num[tmp_res]-1
                         ))
-    return(countOverlaps(bin_GRange,full_cage_Grange))
     
-    
-  })))
+    bin_count<-countOverlaps(bin_GRange,cage_GRange)
+    chr_bin_dat<-chr_bin_dat %>% mutate(cage.count=bin_count)
+      
   return(chr_bin_dat)
 }
 
@@ -67,12 +64,12 @@ dagger_hub_tbl<-data_tbl_load_fn(candidate_hub_file)
 
 cage_GRange<-data_tbl_load_fn(CAGE_peak_GRange_file)
 
-chromo<-"chr22"
-tmp_res<-"50kb"
+chromo<-"chr1"
+tmp_res<-"5kb"
 chr_spec_res<-data_tbl_load_fn(paste0(res_file,chromo,"_spec_res.Rda"))
 
 chr_dat<-compute_chr_res_zscore_fn(dat_file,tmp_res,chromo,res_num)
-chr_cage_bin_dat<-compute_bin_cage_overlap_fn(dat_file,tmp_res,chromo,cage_GRange,res_num) %>% filter(cage.count>0)
+chr_cage_bin_dat<-compute_bin_cage_overlap_fn(chr_dat,tmp_res,chromo,cage_GRange,res_num) %>% filter(cage.count>0)
 chr_cage_hic_dat<-chr_dat %>% filter(X1 %in% chr_cage_bin_dat$bins & X2 %in% chr_cage_bin_dat$bins)
 
 tmp_hub<-dagger_hub_tbl %>% 
@@ -94,7 +91,7 @@ io_hub_dat %>%
   geom_density()
 
 
-tmp_res<-"100kb"
+tmp_res<-"10kb"
 hub_chr<-dagger_hub_tbl %>% filter(res==tmp_res) %>% distinct(chr) %>% unlist
 chr_set<-unlist(lapply(strsplit(list.files(paste0(dat_file,tmp_res)),split="\\."),'[',1))
 chr_set<-chr_set[chr_set %in% hub_chr]
@@ -104,7 +101,7 @@ io_dat_l<-lapply(chr_set,function(chromo){
   chr_spec_res<-data_tbl_load_fn(paste0(res_file,chromo,"_spec_res.Rda"))
   
   chr_dat<-compute_chr_res_zscore_fn(dat_file,tmp_res,chromo,res_num)
-  chr_cage_bin_dat<-compute_bin_cage_overlap_fn(dat_file,tmp_res,chromo,cage_GRange,res_num) %>% filter(cage.count>0)
+  chr_cage_bin_dat<-compute_bin_cage_overlap_fn(chr_dat,tmp_res,chromo,cage_GRange,res_num) %>% filter(cage.count>0)
   chr_cage_hic_dat<-chr_dat %>% filter(X1 %in% chr_cage_bin_dat$bins & X2 %in% chr_cage_bin_dat$bins)
   
   tmp_hub<-dagger_hub_tbl %>% 
@@ -128,3 +125,4 @@ io_dat_tbl<-do.call(bind_rows,io_dat_l)
 io_dat_tbl %>% 
   ggplot(.,aes(zscore,color=hub.io))+
   geom_density()
+save(io_dat_tbl,file = "./data/hub_cage_zscore_io_tbl_10kb.Rda")
