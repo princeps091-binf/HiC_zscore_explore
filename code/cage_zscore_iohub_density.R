@@ -126,3 +126,16 @@ io_dat_tbl %>%
   ggplot(.,aes(zscore,color=hub.io))+
   geom_density()
 save(io_dat_tbl,file = "./data/hub_cage_zscore_io_tbl_10kb.Rda")
+
+tbl_files<-grep("hub_cage_zscore_io_tbl",list.files("./data/"),value = T)
+io_hub_dat_tbl<-lapply(paste0("./data/",tbl_files),function(file){
+  return(data_tbl_load_fn(file))
+})
+
+io_hub_dat_tbl<-do.call(bind_rows,io_hub_dat_tbl)
+gg_io<-io_hub_dat_tbl %>% 
+  mutate(res=fct_relevel(res,names(res_num))) %>% 
+  ggplot(.,aes(zscore,color=hub.io))+
+  geom_density()+
+  facet_wrap(res~.,scales = "free")
+ggsave("~/Documents/multires_bhicect/weeklies/weekly48/img/hub_cage_io_dens.png",gg_io)
