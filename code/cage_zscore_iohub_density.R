@@ -94,8 +94,10 @@ io_hub_dat %>%
   geom_density()
 
 
-tmp_res<-"50kb"
+tmp_res<-"100kb"
+hub_chr<-dagger_hub_tbl %>% filter(res==tmp_res) %>% distinct(chr) %>% unlist
 chr_set<-unlist(lapply(strsplit(list.files(paste0(dat_file,tmp_res)),split="\\."),'[',1))
+chr_set<-chr_set[chr_set %in% hub_chr]
 
 io_dat_l<-lapply(chr_set,function(chromo){
   message(chromo)
