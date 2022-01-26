@@ -8,4 +8,7 @@ renv::install("viridis")
 renv::install("seriation")
 renv::install("caret")
 renv::install("bioc::GenomicRanges")
+renv::install("bioc::liftOver")
+renv::install("bioc::AnnotationHub")
+
 renv::snapshot()
