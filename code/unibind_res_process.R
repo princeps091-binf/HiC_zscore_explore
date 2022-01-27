@@ -35,15 +35,18 @@ breast_TF_tbl %>%
   geom_density()+ylim(c(0,2))
 
 
+
 breast_TF_tbl %>% 
   left_join(.,breast_TF_tbl %>% 
               group_by(collection) %>% 
               summarise(m=mean(pValueLog)) 
   ) %>% 
   mutate(collection=fct_reorder(collection,m)) %>% 
+  group_by(collection) %>% 
+  filter(n()>3) %>% 
   ggplot(.,aes(pValueLog,y=collection))+
-  geom_density_ridges2()+
-  geom_point(aes(m,collection))
+  geom_point(aes(m,collection))+
+  geom_density_ridges(alpha=0.4)
 
 breast_TF_tbl %>% 
   group_by(collection) %>% 
