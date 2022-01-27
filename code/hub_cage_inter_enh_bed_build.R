@@ -64,7 +64,8 @@ cage_GRange<-data_tbl_load_fn(CAGE_peak_GRange_file)
 
 cage_enh_GRange<-data_tbl_load_fn(CAGE_enh_GRange_file)
 
-tmp_res<-"5kb"
+
+tmp_res<-"50kb"
 hub_chr<-dagger_hub_tbl %>% filter(res==tmp_res) %>% distinct(chr) %>% unlist
 chr_set<-unlist(lapply(strsplit(list.files(paste0(dat_file,tmp_res)),split="\\."),'[',1))
 chr_set<-chr_set[chr_set %in% hub_chr]
@@ -101,7 +102,7 @@ enh_Grange_l<-lapply(chr_set,function(chromo){
 
 #-------------------------------------
 ## LiftOver to hg38
-enh_Grange<-reduce(GRangesList(unlist(enh_Grange_l)))
+enh_Grange<-unlist(GRangesList(enh_Grange_l))
 library(AnnotationHub)
 ahub <- AnnotationHub()
 ahub.chain <- subset(ahub, rdataclass == "ChainFile" &  species == "Homo sapiens")
@@ -109,4 +110,9 @@ ahub.chain <- subset(ahub, rdataclass == "ChainFile" &  species == "Homo sapiens
 ahub.chain[grep("hg19ToHg38",ahub.chain$title)]
 hg19Tohg38chain <- ahub.chain[['AH14150']]
 
-enh_Grange_hg38<-liftOver(enh_Grange, hg19Tohg38chain)
+enh_Grange_hg38<-unlist(liftOver(enh_Grange, hg19Tohg38chain))
+
+hmec_enh_Grange_hg38<-unlist(liftOver(cage_enh_GRange, hg19Tohg38chain))
+
+rtracklayer::export.bed(enh_Grange_hg38,con = "./data/hmec_hub_enh_50kb.bed")
+rtracklayer::export.bed(hmec_enh_Grange_hg38,con = "./data/hmec_enh.bed")
