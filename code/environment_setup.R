@@ -10,5 +10,5 @@ renv::install("caret")
 renv::install("bioc::GenomicRanges")
 renv::install("bioc::liftOver")
 renv::install("bioc::AnnotationHub")
-
+renv::install("ggridges")
 renv::snapshot()

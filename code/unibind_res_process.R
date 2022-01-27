@@ -1,5 +1,6 @@
 # Examine Unibind output
 library(tidyverse)
+library(ggridges)
 options(scipen = 999999999)
 res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
 res_num <- c(1e6,5e5,1e5,5e4,1e4,5e3)
@@ -22,10 +23,27 @@ breast_TF_l<-map(TF_LOLA_res_files,function(TF_file){
 
 breast_TF_tbl<-base::do.call(bind_rows,breast_TF_l)
 
+breast_TF_tbl %>% 
+  group_by(collection) %>% 
+  slice_max(pValueLog) %>% 
+  ggplot(.,aes(pValueLog))+
+  geom_density()
+
 
 breast_TF_tbl %>% 
   ggplot(.,aes(pValueLog,group=collection))+
   geom_density()+ylim(c(0,2))
+
+
+breast_TF_tbl %>% 
+  left_join(.,breast_TF_tbl %>% 
+              group_by(collection) %>% 
+              summarise(m=mean(pValueLog)) 
+  ) %>% 
+  mutate(collection=fct_reorder(collection,m)) %>% 
+  ggplot(.,aes(pValueLog,y=collection))+
+  geom_density_ridges2()+
+  geom_point(aes(m,collection))
 
 breast_TF_tbl %>% 
   group_by(collection) %>% 
