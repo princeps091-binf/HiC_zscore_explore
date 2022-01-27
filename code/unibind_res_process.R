@@ -21,3 +21,19 @@ breast_TF_l<-map(TF_LOLA_res_files,function(TF_file){
 })
 
 breast_TF_tbl<-base::do.call(bind_rows,breast_TF_l)
+
+
+breast_TF_tbl %>% 
+  ggplot(.,aes(pValueLog,group=collection))+
+  geom_density()+ylim(c(0,2))
+
+breast_TF_tbl %>% 
+  group_by(collection) %>% 
+  slice_max(pValueLog) %>% 
+  ggplot(.,aes(pValueLog,support))+
+  geom_point()
+
+breast_TF_tbl %>% 
+  group_by(collection) %>% 
+  slice_max(pValueLog) %>% 
+  arrange(desc(pValueLog))
