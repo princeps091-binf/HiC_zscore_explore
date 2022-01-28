@@ -139,4 +139,4 @@ hmec_enh_H3K27ac_tbl %>% dplyr::select(enh,score) %>%
   geom_point(alpha=0.2) +
   scale_x_log10()+scale_y_log10()+
   xlab("mean CAGE I")+ylab("H3K27ac -log(pvalue)")+facet_wrap(hub.io~.)
-ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/hub_io_CAGE_I_vs_H3K27ac_pvalue_enh.svg")
+ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/hub_io_CAGE_I_vs_H3K27ac_pvalue_enh.png")
