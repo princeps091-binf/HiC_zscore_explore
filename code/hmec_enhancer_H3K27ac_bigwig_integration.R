@@ -3,7 +3,7 @@ library(GenomicRanges)
 library(mgcv)
 library(furrr)
 library(vroom)
-library(liftOver)
+library(svglite)
 options(scipen = 999999999)
 res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
 res_num <- c(1e6,5e5,1e5,5e4,1e4,5e3)
@@ -117,8 +117,9 @@ hub_enh_tbl<-tibble(hub.enh=paste0(seqnames(hub_50kb_enh_Grange),"_",start(hub_5
 hmec_enh_H3K27ac_fc_tbl %>% full_join(.,hmec_enh_H3K27ac_tbl,by=c("enh")) %>% 
   mutate(hub.io=ifelse(enh %in% hub_enh_tbl$hub.enh,"in","out")) %>% 
   ggplot(.,aes(score.y,color=hub.io))+geom_density()+scale_x_log10()+xlab("-log(p-value)")
-
+ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/hub_io_H3K27ac_pval_enh.svg")
 hmec_enh_H3K27ac_fc_tbl %>% full_join(.,hmec_enh_H3K27ac_tbl,by=c("enh")) %>% 
   mutate(hub.io=ifelse(enh %in% hub_enh_tbl$hub.enh,"in","out")) %>% 
   ggplot(.,aes(score.x,color=hub.io))+geom_density()+scale_x_log10()+xlab("fold-change")
+ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/hub_io_H3K27ac_fc_enh.svg")
 
