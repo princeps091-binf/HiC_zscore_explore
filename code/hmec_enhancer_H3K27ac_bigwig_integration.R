@@ -112,5 +112,13 @@ hmec_enh_H3K27ac_fc_tbl<-do.call(bind_rows,future_map(1:length(cage_enh_GRange),
   return(as.data.frame(H3K27ac_hub_enh) %>% distinct %>% as_tibble %>% mutate(enh=paste0(seqnames(cage_enh_GRange[x]),"_",start(cage_enh_GRange[x]),"_",end(cage_enh_GRange[x]))))
 }))
 
-hmec_enh_H3K27ac_fc_tbl %>% full_join(.,hub_50kb_enh_H3K27ac_tbl,by=c("enh")) %>% 
-  ggplot(.,aes(score.x,score.y))+geom_point()
+hub_enh_tbl<-tibble(hub.enh=paste0(seqnames(hub_50kb_enh_Grange),"_",start(hub_50kb_enh_Grange),"_",end(hub_50kb_enh_Grange)))
+
+hmec_enh_H3K27ac_fc_tbl %>% full_join(.,hmec_enh_H3K27ac_tbl,by=c("enh")) %>% 
+  mutate(hub.io=ifelse(enh %in% hub_enh_tbl$hub.enh,"in","out")) %>% 
+  ggplot(.,aes(score.y,color=hub.io))+geom_density()+scale_x_log10()+xlab("-log(p-value)")
+
+hmec_enh_H3K27ac_fc_tbl %>% full_join(.,hmec_enh_H3K27ac_tbl,by=c("enh")) %>% 
+  mutate(hub.io=ifelse(enh %in% hub_enh_tbl$hub.enh,"in","out")) %>% 
+  ggplot(.,aes(score.x,color=hub.io))+geom_density()+scale_x_log10()+xlab("fold-change")
+
