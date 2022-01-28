@@ -53,6 +53,8 @@ compute_bin_cage_overlap_fn<-function(chr_dat,cl_res,chromo,full_cage_Grange,res
 candidate_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/HMEC_union_dagger_tbl.Rda"
 CAGE_peak_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_union_HMEC_Grange.Rda"
 CAGE_enh_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_enh_HMEC_Grange.Rda"
+CAGE_enh_tbl_file<-"~/Documents/multires_bhicect/data/epi_data/HMEC/CAGE/CAGE_enh_tbl.Rda"
+
 
 res_file<-"~/Documents/multires_bhicect/data/HMEC/spec_res/"
 dat_file<-"~/Documents/multires_bhicect/data/HMEC/"
@@ -64,6 +66,7 @@ cage_GRange<-data_tbl_load_fn(CAGE_peak_GRange_file)
 
 cage_enh_GRange<-data_tbl_load_fn(CAGE_enh_GRange_file)
 
+cage_enh_tbl<-data_tbl_load_fn(CAGE_enh_tbl_file)
 
 tmp_res<-"50kb"
 hub_chr<-dagger_hub_tbl %>% filter(res==tmp_res) %>% distinct(chr) %>% unlist
@@ -123,3 +126,17 @@ hmec_enh_H3K27ac_fc_tbl %>% full_join(.,hmec_enh_H3K27ac_tbl,by=c("enh")) %>%
   ggplot(.,aes(score.x,color=hub.io))+geom_density()+scale_x_log10()+xlab("fold-change")
 ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/hub_io_H3K27ac_fc_enh.svg")
 
+hub_enh_tbl<-hub_enh_tbl %>% mutate(chr=as.character(seqnames(hub_50kb_enh_Grange)),start=start(hub_50kb_enh_Grange),end=end(hub_50kb_enh_Grange))
+
+cage_enh_tbl %>% left_join(.,hub_enh_tbl) %>% mutate(hub.enh=ifelse(is.na(hub.enh),"out","in")) %>% 
+  ggplot(.,aes(m,color=hub.enh))+geom_density()+scale_x_log10()+xlab("CAGE I.")
+ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/hub_io_CAGE_I_enh.svg")
+
+hmec_enh_H3K27ac_tbl %>% dplyr::select(enh,score) %>% 
+  full_join(.,cage_enh_tbl %>% mutate(enh=paste(chr,start,end,sep="_"))) %>% 
+  mutate(hub.io=ifelse(enh %in% hub_enh_tbl$hub.enh,"in","out")) %>% 
+  ggplot(.,aes(m,score))+
+  geom_point(alpha=0.2) +
+  scale_x_log10()+scale_y_log10()+
+  xlab("mean CAGE I")+ylab("H3K27ac -log(pvalue)")+facet_wrap(hub.io~.)
+ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/hub_io_CAGE_I_vs_H3K27ac_pvalue_enh.svg")
