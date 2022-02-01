@@ -1,6 +1,7 @@
 # Examine Unibind output
 library(tidyverse)
 library(ggridges)
+library(svglite)
 options(scipen = 999999999)
 res_set <- c('1Mb','500kb','100kb','50kb','10kb','5kb')
 res_num <- c(1e6,5e5,1e5,5e4,1e4,5e3)
@@ -18,7 +19,7 @@ breast_TF_l<-map(TF_LOLA_res_files,function(TF_file){
     cellType = col_character()
   ))
   
-  return(tmp_tbl %>% filter(grepl("breast",description)) %>% dplyr::select(collection,pValueLog,oddsRatio,support,cellType))
+  return(tmp_tbl %>% filter(grepl("breast|mammary",description)) %>% dplyr::select(collection,pValueLog,oddsRatio,support,cellType))
 })
 
 breast_TF_tbl<-base::do.call(bind_rows,breast_TF_l)
@@ -36,7 +37,7 @@ breast_TF_tbl %>%
 
 
 
-breast_TF_tbl %>% 
+gg_joy<-breast_TF_tbl %>% 
   left_join(.,breast_TF_tbl %>% 
               group_by(collection) %>% 
               summarise(m=mean(pValueLog)) 
@@ -47,6 +48,7 @@ breast_TF_tbl %>%
   ggplot(.,aes(pValueLog,y=collection))+
   geom_point(aes(m,collection))+
   geom_density_ridges(alpha=0.4)
+ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/Unibind_breast_joy.svg",gg_joy)
 
 breast_TF_tbl %>% 
   group_by(collection) %>% 
