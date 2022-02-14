@@ -50,14 +50,14 @@ compute_bin_cage_overlap_fn<-function(chr_dat,cl_res,chromo,full_cage_Grange,res
 }
 
 #-----------------------------------------
-candidate_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/HMEC_union_dagger_tbl.Rda"
-CAGE_peak_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_union_HMEC_Grange.Rda"
-CAGE_enh_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_enh_HMEC_Grange.Rda"
-CAGE_enh_tbl_file<-"~/Documents/multires_bhicect/data/epi_data/HMEC/CAGE/CAGE_enh_tbl.Rda"
+candidate_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/GM12878_union_dagger_tbl.Rda"
+CAGE_peak_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_union_GM12878_Grange.Rda"
+CAGE_enh_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_enh_GM12878_Grange.Rda"
+CAGE_enh_tbl_file<-"~/Documents/multires_bhicect/data/epi_data/GM12878/CAGE/CAGE_enh_tbl.Rda"
 
 
-res_file<-"~/Documents/multires_bhicect/data/HMEC/spec_res/"
-dat_file<-"~/Documents/multires_bhicect/data/HMEC/"
+res_file<-"~/Documents/multires_bhicect/data/GM12878/spec_res/"
+dat_file<-"~/Documents/multires_bhicect/data/GM12878/"
 
 
 dagger_hub_tbl<-data_tbl_load_fn(candidate_hub_file)
@@ -106,12 +106,12 @@ hub_50kb_enh_Grange<-unlist(GRangesList(enh_Grange_l))
 plan(multisession, workers = 3)
 
 hmec_enh_H3K27ac_tbl<-do.call(bind_rows,future_map(1:length(cage_enh_GRange),function(x){
-  H3K27ac_hub_enh<-rtracklayer::import(con = "~/Documents/multires_bhicect/data/epi_data/HMEC/ENCFF305KUC_pvalue_HMEC_H3K27ac.bigWig",which=cage_enh_GRange[x])
+  H3K27ac_hub_enh<-rtracklayer::import(con = "~/Documents/multires_bhicect/data/epi_data/GM12878/H3K27ac/ENCFF440GZA_GM12878_pval.bigWig",which=cage_enh_GRange[x])
   return(as.data.frame(H3K27ac_hub_enh) %>% distinct %>% as_tibble %>% mutate(enh=paste0(seqnames(cage_enh_GRange[x]),"_",start(cage_enh_GRange[x]),"_",end(cage_enh_GRange[x]))))
 }))
 
 hmec_enh_H3K27ac_fc_tbl<-do.call(bind_rows,future_map(1:length(cage_enh_GRange),function(x){
-  H3K27ac_hub_enh<-rtracklayer::import(con = "~/Documents/multires_bhicect/data/epi_data/HMEC/ENCFF981WTU_FC_HMEC_H3K27ac.bigWig",which=cage_enh_GRange[x])
+  H3K27ac_hub_enh<-rtracklayer::import(con = "~/Documents/multires_bhicect/data/epi_data/GM12878/H3K27ac/ENCFF180LKW_GM12878_FC.bigWig",which=cage_enh_GRange[x])
   return(as.data.frame(H3K27ac_hub_enh) %>% distinct %>% as_tibble %>% mutate(enh=paste0(seqnames(cage_enh_GRange[x]),"_",start(cage_enh_GRange[x]),"_",end(cage_enh_GRange[x]))))
 }))
 
