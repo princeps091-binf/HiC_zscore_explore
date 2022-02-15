@@ -8,3 +8,6 @@ hmec_enh.bed
 hmec_hub_enh_50kb.bed
 hub_enh_50kb.bed
 Unibind
+GM12878_enh_H3K27ac_pval_tbl.Rda
+H1_enh_H3K27ac_pval_tbl.Rda
+HMEC_enh_H3K27ac_pval_tbl.Rda

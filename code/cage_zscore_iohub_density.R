@@ -30,7 +30,7 @@ hic_dat_in<-function(dat_file,cl_res,chromo){
 
 compute_chr_res_zscore_fn<-function(dat_file,cl_res,chromo,res_num){
   chr_dat<-hic_dat_in(dat_file,cl_res,chromo) 
-  hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat)
+  hic_gam<-bam(lw~s(ld,bs = "ad"),data = chr_dat,cluster = 4)
   pred_vec<-predict(hic_gam,newdata = chr_dat)
   #Compute zscore and predicted HiC magnitude
   chr_dat<-chr_dat%>%mutate(pred=pred_vec,zscore=(chr_dat$lw-pred_vec)/hic_gam$sig2)
@@ -54,10 +54,10 @@ compute_bin_cage_overlap_fn<-function(chr_dat,cl_res,chromo,full_cage_Grange,res
 
 #-----------------------------------------
 
-candidate_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/HMEC_union_dagger_tbl.Rda"
-CAGE_peak_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_union_HMEC_Grange.Rda"
-res_file<-"~/Documents/multires_bhicect/data/HMEC/spec_res/"
-dat_file<-"~/Documents/multires_bhicect/data/HMEC/"
+candidate_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/GM12878_union_dagger_tbl.Rda"
+CAGE_peak_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_union_GM12878_Grange.Rda"
+res_file<-"~/Documents/multires_bhicect/data/GM12878/spec_res/"
+dat_file<-"~/Documents/multires_bhicect/data/GM12878/"
 
 
 dagger_hub_tbl<-data_tbl_load_fn(candidate_hub_file)
@@ -91,10 +91,12 @@ io_hub_dat %>%
   geom_density()
 
 
-tmp_res<-"100kb"
+tmp_res<-"5kb"
 hub_chr<-dagger_hub_tbl %>% filter(res==tmp_res) %>% distinct(chr) %>% unlist
 chr_set<-unlist(lapply(strsplit(list.files(paste0(dat_file,tmp_res)),split="\\."),'[',1))
 chr_set<-chr_set[chr_set %in% hub_chr]
+
+plan(multisession, workers = 3)
 
 io_dat_l<-lapply(chr_set,function(chromo){
   message(chromo)
@@ -128,7 +130,7 @@ io_dat_tbl %>%
   geom_density()
 save(io_dat_tbl,file = "./data/hub_cage_zscore_io_tbl_10kb.Rda")
 
-tbl_files<-grep("hub_cage_zscore_io_tbl",list.files("./data/"),value = T)
+tbl_files<-grep("hub_cage_zscore_io_tbl",list.files("./data/hub_io_zscore/HMEC/"),value = T)
 io_hub_dat_tbl<-lapply(paste0("./data/",tbl_files),function(file){
   return(data_tbl_load_fn(file))
 })
