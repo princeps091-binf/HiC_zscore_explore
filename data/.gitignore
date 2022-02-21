@@ -1,9 +1,3 @@
-hub_cage_zscore_io_tbl_100kb.Rda
-hub_cage_zscore_io_tbl_10kb.Rda
-hub_cage_zscore_io_tbl_1Mb.Rda
-hub_cage_zscore_io_tbl_500kb.Rda
-hub_cage_zscore_io_tbl_50kb.Rda
-hub_cage_zscore_io_tbl_5kb.Rda
 hmec_enh.bed
 hmec_hub_enh_50kb.bed
 hub_enh_50kb.bed
@@ -11,3 +5,4 @@ Unibind
 GM12878_enh_H3K27ac_pval_tbl.Rda
 H1_enh_H3K27ac_pval_tbl.Rda
 HMEC_enh_H3K27ac_pval_tbl.Rda
+hub_io_zscore
