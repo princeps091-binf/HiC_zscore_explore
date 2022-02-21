@@ -37,14 +37,14 @@ compute_bin_cage_overlap_fn<-function(chr_dat,cl_res,chromo,full_cage_Grange,res
   return(chr_bin_dat)
 }
 #-----------------------------------------
-candidate_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/HMEC_union_dagger_tbl.Rda"
-CAGE_peak_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_union_HMEC_Grange.Rda"
-CAGE_enh_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_enh_HMEC_Grange.Rda"
-CAGE_enh_tbl_file<-"~/Documents/multires_bhicect/data/epi_data/HMEC/CAGE/CAGE_enh_tbl.Rda"
-CAGE_enh_H3K27ac_file<-"./data/HMEC_enh_H3K27ac_pval_tbl.Rda"
+candidate_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/DAGGER_tbl/H1_union_dagger_tbl.Rda"
+CAGE_peak_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_union_H1_Grange.Rda"
+CAGE_enh_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_enh_H1_Grange.Rda"
+CAGE_enh_tbl_file<-"~/Documents/multires_bhicect/data/epi_data/H1/CAGE/CAGE_enh_tbl.Rda"
+CAGE_enh_H3K27ac_file<-"./data/H1_enh_H3K27ac_pval_tbl.Rda"
 
-res_file<-"~/Documents/multires_bhicect/data/HMEC/spec_res/"
-dat_file<-"~/Documents/multires_bhicect/data/HMEC/"
+res_file<-"~/Documents/multires_bhicect/data/H1/Dekker/spec_res/"
+dat_file<-"~/Documents/multires_bhicect/data/H1/Dekker/"
 
 
 dagger_hub_tbl<-data_tbl_load_fn(candidate_hub_file)
@@ -57,7 +57,7 @@ cage_enh_tbl<-data_tbl_load_fn(CAGE_enh_tbl_file)
 
 enh_H3K27ac_tbl<-data_tbl_load_fn(CAGE_enh_H3K27ac_file)
 
-tmp_res<-"50kb"
+tmp_res<-"5kb"
 hub_chr<-dagger_hub_tbl %>% filter(res==tmp_res) %>% distinct(chr) %>% unlist
 chr_set<-unlist(lapply(strsplit(list.files(paste0(dat_file,tmp_res)),split="\\."),'[',1))
 chr_set<-chr_set[chr_set %in% hub_chr]
@@ -101,7 +101,7 @@ hub_enh_tbl<-tibble(hub.enh=paste0(seqnames(hub_50kb_enh_Grange),"_",start(hub_5
 enh_H3K27ac_tbl %>% 
   mutate(hub.io=ifelse(enh %in% hub_enh_tbl$hub.enh,"in","out")) %>% 
   ggplot(.,aes(pval,color=hub.io))+geom_density()+scale_x_log10()+xlab("-log(p-value)")
-ggsave("~/Documents/multires_bhicect/weeklies/Fran_Supek/img/HMEC_50kb_hub_io_H3K27ac_pval_enh.svg")
+ggsave("~/Documents/multires_bhicect/weeklies/weekly51/img/H1_5kb_hub_io_H3K27ac_pval_enh.svg")
 
 
 zero_tresh<-10**(floor(min(log10(enh_H3K27ac_tbl$fc[enh_H3K27ac_tbl$fc>0]))) -1)
@@ -110,4 +110,4 @@ enh_H3K27ac_tbl %>%
   ggplot(.,aes(fc+zero_tresh,color=hub.io))+geom_density()+
   scale_x_log10(breaks=c(zero_tresh,0.1,1,10,100),labels=c(0,0.1,1,10,100))+ 
   xlab("fold-change")
-ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/GM12878_50kb_hub_io_H3K27ac_fc_enh.svg")
+ggsave("~/Documents/multires_bhicect/weeklies/weekly51/img/H1_5kb_hub_io_H3K27ac_fc_enh.svg")
