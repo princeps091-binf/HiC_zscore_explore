@@ -58,12 +58,12 @@ dagger_hub_tbl<-data_tbl_load_fn(candidate_hub_file)
 
 cage_GRange<-data_tbl_load_fn(CAGE_peak_GRange_file)
 
-tmp_res<-"10kb"
+tmp_res<-"5kb"
 hub_chr<-dagger_hub_tbl %>% filter(res==tmp_res) %>% distinct(chr) %>% unlist
 chr_set<-unlist(lapply(strsplit(list.files(paste0(dat_file,tmp_res)),split="\\."),'[',1))
 chr_set<-chr_set[chr_set %in% hub_chr]
 
-chr_set<-chr_set[!(chr_set %in% unlist(lapply(strsplit(list.files("./data/hub_io_zscore/GM12878/zscore_10kb/"),split="_"),"[",1)))]
+chr_set<-chr_set[!(chr_set %in% unlist(lapply(strsplit(list.files("./data/hub_io_zscore/GM12878/zscore_5kb/"),split="_"),"[",1)))]
 
 plan(multisession, workers = 3)
 
