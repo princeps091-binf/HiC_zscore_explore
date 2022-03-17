@@ -74,7 +74,7 @@ top_compound_hub_5kb_tbl<-top_compound_hub_5kb_tbl %>%
   }))
 
 in_set<-top_compound_hub_5kb_tbl %>% 
-#  filter(res=="5kb") %>% 
+#  filter(res=="50kb") %>% 
   dplyr::select(peak.content) %>% 
   unnest(cols=c(peak.content)) %>% 
   distinct() %>% unlist
