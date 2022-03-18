@@ -19,10 +19,17 @@ breast_TF_l<-map(TF_LOLA_res_files,function(TF_file){
     cellType = col_character()
   ))
   
-  return(tmp_tbl %>% filter(grepl("breast|mammary",description)) %>% dplyr::select(collection,pValueLog,oddsRatio,support,cellType))
+  return(tmp_tbl %>% mutate(breast.sample=grepl("breast|mammary",description)) %>% 
+           dplyr::select(collection,pValueLog,oddsRatio,support,cellType,breast.sample))
 })
 
 breast_TF_tbl<-base::do.call(bind_rows,breast_TF_l)
+
+breast_subset_tbl<-breast_TF_tbl %>% 
+  inner_join(.,breast_TF_tbl %>% group_by(collection) %>% 
+               summarise(io=any(breast.sample)) %>% 
+               filter(io)
+  )
 
 breast_TF_tbl %>% 
   group_by(collection) %>% 
@@ -32,23 +39,26 @@ breast_TF_tbl %>%
 
 
 breast_TF_tbl %>% 
-  ggplot(.,aes(pValueLog,group=collection))+
-  geom_density()+ylim(c(0,2))
+  ggplot(.,aes(pValueLog,color=breast.sample))+
+  geom_density()
 
 
 
-gg_joy<-breast_TF_tbl %>% 
-  left_join(.,breast_TF_tbl %>% 
-              group_by(collection) %>% 
-              summarise(m=mean(pValueLog)) 
-  ) %>% 
-  mutate(collection=fct_reorder(collection,m)) %>% 
+gg_joy<-breast_subset_tbl %>% 
   group_by(collection) %>% 
-  filter(n()>3) %>% 
+  filter(n()>5) %>% 
   ggplot(.,aes(pValueLog,y=collection))+
-  geom_point(aes(m,collection))+
-  geom_density_ridges(alpha=0.4)
+  geom_density_ridges(alpha=0.4)+
+  geom_point(aes(color=breast.sample),position="jitter")
+gg_joy
 ggsave("~/Documents/multires_bhicect/weeklies/weekly49/img/Unibind_breast_joy.svg",gg_joy)
+
+gg_joy<-breast_subset_tbl %>% 
+  mutate(set="ALL") %>% 
+  bind_rows(.,breast_subset_tbl %>% filter(breast.sample) %>% 
+              mutate(set="breast")) %>% 
+  ggplot(.,aes(collection,pValueLog,color=set))+
+  geom_boxplot()
 
 breast_TF_tbl %>% 
   group_by(collection) %>% 
