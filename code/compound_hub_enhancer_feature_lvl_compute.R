@@ -39,11 +39,11 @@ Build_GRange_fn<-function(chromo,res,bins,res_num){
 }
 
 #-----------------------------------------
-candidate_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/candidate_compound_hub/HMEC_5kb_tss_compound_hub.Rda"
-spec_res_file<-"~/Documents/multires_bhicect/data/HMEC/spec_res/"
+candidate_hub_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/candidate_compound_hub/GM12878_5kb_tss_compound_hub.Rda"
+spec_res_file<-"~/Documents/multires_bhicect/data/GM12878/spec_res/"
 
-CAGE_enh_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_enh_HMEC_Grange.Rda"
-CAGE_enh_H3K27ac_file<-"./data/HMEC_enh_H3K27ac_pval_tbl.Rda"
+CAGE_enh_GRange_file<-"~/Documents/multires_bhicect/Bootstrapp_fn/data/GRanges/CAGE_enh_GM12878_Grange.Rda"
+CAGE_enh_H3K27ac_file<-"./data/GM12878_enh_H3K27ac_pval_tbl.Rda"
 #-----------------------------------------
 
 compound_hub_5kb_tbl<-data_tbl_load_fn(candidate_hub_file)
@@ -88,5 +88,6 @@ enh_H3K27ac_tbl %>%
   mutate(hub.io=ifelse(enh %in% in_set,"in","out")) %>% 
   ggplot(.,aes(fc+zero_tresh,color=hub.io))+geom_density()+
   scale_x_log10(breaks=c(zero_tresh,0.1,1,10,100),labels=c(0,0.1,1,10,100))+ 
+  scale_color_brewer(palette="Set1")+
   xlab("fold-change")
-
+ggsave(filename = "~/Documents/multires_bhicect/weeklies/weekly53/img/GM12878_H3K27ac_enh_io.png")
