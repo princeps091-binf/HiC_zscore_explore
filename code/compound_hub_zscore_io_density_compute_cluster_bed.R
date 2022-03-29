@@ -51,10 +51,10 @@ compute_bin_feature_overlap_fn<-function(chr_dat,cl_res,chromo,feature_GRange,re
 }
 
 #-----------------------------------------
-candidate_hub_file<-"~/data_transfer/candidate_compound_hub/HMEC_5kb_tss_compound_hub.Rda"
-feature_GRange_file<-"~/data_transfer/CTCF_bed/HMEC_CTCF_hg19.bed"
-res_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/spec_res/"
-dat_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/"
+candidate_hub_file<-"~/data_transfer/candidate_compound_hub/GM12878_5kb_tss_compound_hub.Rda"
+feature_GRange_file<-"~/data_transfer/CTCF_bed/GM12878_CTCF_hg19.bed"
+res_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/spec_res/"
+dat_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/"
 #-----------------------------------------
 compound_hub_5kb_tbl<-data_tbl_load_fn(candidate_hub_file)
 
@@ -111,7 +111,7 @@ for(tmp_res in tmp_res_set){
   
   tmp_res_tbl<-do.call(bind_rows,io_dat_l)
   
-  save(tmp_res_tbl,file = paste0("~/data_transfer/CTCF_io_hub_out_tbl/HMEC/HMEC_io_CTCF_zscore_",tmp_res,"_io_tbl.Rda"))
+  save(tmp_res_tbl,file = paste0("~/data_transfer/CTCF_io_hub_out_tbl/GM12878/GM12878_io_CTCF_zscore_",tmp_res,"_io_tbl.Rda"))
   
 }
 

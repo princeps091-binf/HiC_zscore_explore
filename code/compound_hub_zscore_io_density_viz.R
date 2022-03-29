@@ -20,8 +20,8 @@ data_tbl_load_fn<-function(file){
 
 
 
-tbl_files<-grep("*_io_tbl.Rda",list.files("./data/hub_io_zscore/top_hub/HMEC/"),value = T)
-io_hub_dat_tbl<-lapply(paste0("./data/hub_io_zscore/top_hub/HMEC/",tbl_files),function(file){
+tbl_files<-grep("*_io_tbl.Rda",list.files("./data/hub_io_zscore/top_hub/CTCF/HMEC/"),value = T)
+io_hub_dat_tbl<-lapply(paste0("./data/hub_io_zscore/top_hub/CTCF/HMEC/",tbl_files),function(file){
   return(data_tbl_load_fn(file))
 })
 
@@ -32,4 +32,4 @@ io_hub_dat_tbl %>%
   ggplot(.,aes(zscore,color=hub.io))+
   geom_density()+facet_wrap(res~.,scales="free")
 
-ggsave("~/Documents/multires_bhicect/weeklies/weekly54/img/CAGE_HMEC_zscore_io_dens.png")
+ggsave("~/Documents/multires_bhicect/weeklies/weekly54/img/CTCF_HMEC_zscore_io_dens.png")
