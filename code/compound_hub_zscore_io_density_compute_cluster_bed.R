@@ -1,5 +1,6 @@
-library(tidyverse)
+library(rtracklayer)
 library(GenomicRanges)
+library(tidyverse)
 library(mgcv)
 library(furrr)
 library(vroom)
@@ -34,7 +35,7 @@ compute_chr_res_zscore_fn<-function(dat_file,cl_res,chromo,res_num){
   return(chr_dat %>% mutate(res=cl_res,chr=chromo))
 }  
 
-compute_bin_cage_overlap_fn<-function(chr_dat,cl_res,chromo,cage_GRange,res_num){
+compute_bin_feature_overlap_fn<-function(chr_dat,cl_res,chromo,feature_GRange,res_num){
   chr_bin_dat<-chr_dat %>% summarise(bins=unique(c(X1,X2))) %>% mutate(chr=chromo,res=cl_res)
   
   
@@ -43,17 +44,17 @@ compute_bin_cage_overlap_fn<-function(chr_dat,cl_res,chromo,cage_GRange,res_num)
                                        end=as.numeric(chr_bin_dat$bins)+res_num[tmp_res]-1
                       ))
   
-  bin_count<-countOverlaps(bin_GRange,cage_GRange)
-  chr_bin_dat<-chr_bin_dat %>% mutate(cage.count=bin_count)
+  bin_count<-countOverlaps(bin_GRange,feature_GRange)
+  chr_bin_dat<-chr_bin_dat %>% mutate(feature.count=bin_count)
   
   return(chr_bin_dat)
 }
 
 #-----------------------------------------
-candidate_hub_file<-"~/data_transfer/candidate_compound_hub/H1_5kb_tss_compound_hub.Rda"
-CAGE_peak_GRange_file<-"~/data_transfer/CAGE_GRange/CAGE_union_H1_Grange.Rda"
-res_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/H1/Dekker/spec_res/"
-dat_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/H1/Dekker/"
+candidate_hub_file<-"~/data_transfer/candidate_compound_hub/HMEC_5kb_tss_compound_hub.Rda"
+feature_GRange_file<-"~/data_transfer/CTCF_bed/HMEC_CTCF_hg19.bed"
+res_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/spec_res/"
+dat_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/HMEC/"
 #-----------------------------------------
 compound_hub_5kb_tbl<-data_tbl_load_fn(candidate_hub_file)
 
@@ -66,10 +67,8 @@ top_compound_hub_5kb_tbl<-do.call(bind_rows,map(unique(compound_hub_5kb_tbl$chr)
   
 }))
 rm(compound_hub_5kb_tbl)
-cage_GRange<-data_tbl_load_fn(CAGE_peak_GRange_file)
+feature_GRange<-import(feature_GRange_file,format='bedgraph')
 #-----------------------------------------
-
-
 #loop through resolution
 tmp_res_set<-unique(top_compound_hub_5kb_tbl$res)
 
@@ -78,41 +77,41 @@ for(tmp_res in tmp_res_set){
   chr_set<-unlist(lapply(strsplit(list.files(paste0(dat_file,tmp_res)),split="\\."),'[',1))
   chr_set<-chr_set[chr_set %in% hub_chr]
   
-io_dat_l<-lapply(chr_set,function(chromo){
-  message(chromo,":",tmp_res)
-  chr_spec_res<-data_tbl_load_fn(paste0(res_file,chromo,"_spec_res.Rda"))
-
-  message(chromo," at ",tmp_res,": GAM computation")
-  chr_dat<-compute_chr_res_zscore_fn(dat_file,tmp_res,chromo,res_num)
-  chr_cage_bin_dat<-compute_bin_cage_overlap_fn(chr_dat,tmp_res,chromo,cage_GRange,res_num) %>% filter(cage.count>0)
-  chr_cage_hic_dat<-chr_dat %>% filter(X1 %in% chr_cage_bin_dat$bins & X2 %in% chr_cage_bin_dat$bins)
+  io_dat_l<-lapply(chr_set,function(chromo){
+    message(chromo,":",tmp_res)
+    chr_spec_res<-data_tbl_load_fn(paste0(res_file,chromo,"_spec_res.Rda"))
+    
+    message(chromo," at ",tmp_res,": GAM computation")
+    chr_dat<-compute_chr_res_zscore_fn(dat_file,tmp_res,chromo,res_num)
+    chr_feature_bin_dat<-compute_bin_feature_overlap_fn(chr_dat,tmp_res,chromo,feature_GRange,res_num) %>% filter(feature.count>0)
+    chr_feature_hic_dat<-chr_dat %>% filter(X1 %in% chr_feature_bin_dat$bins & X2 %in% chr_feature_bin_dat$bins)
+    
+    tmp_hub<-top_compound_hub_5kb_tbl %>% 
+      filter(chr==chromo,res==tmp_res) %>% 
+      mutate(bins=chr_spec_res$cl_member[parent.hub]) %>% 
+      mutate(bins=map(bins,function(x) as.numeric(x)))
+    
+    plan(multisession, workers = 15)
+    
+    message(chromo," at ",tmp_res,": Subset hub interaction")
+    tmp_hub<-tmp_hub %>% mutate(hub.feature.zscore=future_map(bins,function(x){
+      chr_feature_hic_dat %>% filter(X1 %in% x & X2 %in% x) %>% dplyr::select(chr,res,X1,X2,zscore)
+    }))
+    
+    plan(sequential)
+    
+    tmp_hub_dat<-tmp_hub %>% dplyr::select(hub.feature.zscore) %>% unnest(cols = c(hub.feature.zscore)) %>% mutate(hub.io="hub")
+    
+    io_hub_dat<-tmp_hub_dat %>% full_join(.,chr_feature_hic_dat %>% dplyr::select(chr,res,X1,X2,zscore))
+    
+    io_hub_dat<-io_hub_dat %>% mutate(hub.io=ifelse(is.na(hub.io),"out",hub.io),zscore=as.numeric(zscore)) %>% distinct()
+    return(io_hub_dat)
+    
+  })
   
-  tmp_hub<-top_compound_hub_5kb_tbl %>% 
-    filter(chr==chromo,res==tmp_res) %>% 
-    mutate(bins=chr_spec_res$cl_member[parent.hub]) %>% 
-    mutate(bins=map(bins,function(x) as.numeric(x)))
+  tmp_res_tbl<-do.call(bind_rows,io_dat_l)
   
-  plan(multisession, workers = 15)
+  save(tmp_res_tbl,file = paste0("~/data_transfer/CTCF_io_hub_out_tbl/HMEC/HMEC_io_CTCF_zscore_",tmp_res,"_io_tbl.Rda"))
   
-  message(chromo," at ",tmp_res,": Subset hub interaction")
-  tmp_hub<-tmp_hub %>% mutate(hub.cage.zscore=future_map(bins,function(x){
-    chr_cage_hic_dat %>% filter(X1 %in% x & X2 %in% x) %>% dplyr::select(chr,res,X1,X2,zscore)
-  }))
-  
-  plan(sequential)
-  
-  tmp_hub_dat<-tmp_hub %>% dplyr::select(hub.cage.zscore) %>% unnest(cols = c(hub.cage.zscore)) %>% mutate(hub.io="hub")
-  
-  io_hub_dat<-tmp_hub_dat %>% full_join(.,chr_cage_hic_dat %>% dplyr::select(chr,res,X1,X2,zscore))
-  
-  io_hub_dat<-io_hub_dat %>% mutate(hub.io=ifelse(is.na(hub.io),"out",hub.io),zscore=as.numeric(zscore)) %>% distinct()
-  return(io_hub_dat)
-  
-})
-
-tmp_res_tbl<-do.call(bind_rows,io_dat_l)
-
-save(tmp_res_tbl,file = paste0("~/data_transfer/CAGE_io_hub_out_tbl/H1/H1_io_cage_zscore_",tmp_res,"_io_tbl.Rda"))
-
 }
 
