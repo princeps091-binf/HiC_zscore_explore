@@ -12,4 +12,6 @@ renv::install("bioc::liftOver")
 renv::install("bioc::AnnotationHub")
 renv::install("ggridges")
 renv::install("svglite")
+renv::install("data.tree")
+
 renv::snapshot()
