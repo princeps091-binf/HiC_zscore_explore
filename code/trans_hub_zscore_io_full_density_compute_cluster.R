@@ -34,9 +34,9 @@ compute_chr_res_zscore_fn<-function(dat_file,cl_res,chromo,res_num){
 }  
 
 #-----------------------------------------
-candidate_hub_file<-"~/data_transfer/candidate_trans_DAGGER_hub/GM12878_union_trans_res_dagger_tbl.Rda"
-res_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/spec_res/"
-dat_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/"
+candidate_hub_file<-"~/data_transfer/candidate_trans_DAGGER_hub/HMEC_union_trans_res_dagger_tbl.Rda"
+res_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/spec_res/"
+dat_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/HMEC/"
 #-----------------------------------------
 trans_hub_tbl<-data_tbl_load_fn(candidate_hub_file)
 #-----------------------------------------
@@ -82,7 +82,7 @@ for(tmp_res in tmp_res_set){
   
   tmp_res_tbl<-do.call(bind_rows,io_dat_l)
   
-  save(tmp_res_tbl,file = paste0("~/data_transfer/candidate_trans_DAGGER_hub/io_hub_out_tbl/GM12878/GM12878_io_zscore_",tmp_res,"_tbl.Rda"))
+  save(tmp_res_tbl,file = paste0("~/data_transfer/candidate_trans_DAGGER_hub/io_hub_out_tbl/HMEC/HMEC_io_zscore_",tmp_res,"_tbl.Rda"))
   
 }
 
