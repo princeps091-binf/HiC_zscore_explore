@@ -99,7 +99,7 @@ for(chromo in tmp_chr_set){
     tmp_res_dat_tbl<-tmp_res_hub_dat_tbl %>% 
       full_join(.,tmp_res_cl_out_dat_tbl) %>% 
       mutate(io.hub=ifelse(is.na(io.hub),"out",io.hub))
-    tmp_res_dat_tbl %>% 
+    gg_tmp<-tmp_res_dat_tbl %>% 
       ggplot(.,aes(zscore,color=io.hub))+geom_density()
   })
 }
