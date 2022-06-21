@@ -53,10 +53,10 @@ compute_bin_cage_overlap_fn<-function(chr_dat,cl_res,chromo,cage_GRange,res_num)
 }
 
 #-----------------------------------------
-candidate_hub_file<-"~/data_transfer/candidate_trans_DAGGER_hub/GM12878_union_trans_res_dagger_tbl.Rda"
-res_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/spec_res/"
-dat_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/GM12878/"
-CAGE_peak_GRange_file<-"~/data_transfer/CAGE_GRange/CAGE_union_GM12878_Grange.Rda"
+candidate_hub_file<-"~/data_transfer/candidate_trans_DAGGER_hub/H1_union_trans_res_dagger_tbl.Rda"
+res_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/H1/Dekker/spec_res/"
+dat_file<-"/storage/mathelierarea/processed/vipin/group/HiC_data/H1/Dekker/"
+CAGE_peak_GRange_file<-"~/data_transfer/CAGE_GRange/CAGE_union_H1_Grange.Rda"
 #-----------------------------------------
 #loop through resolution
 top_compound_hub_5kb_tbl<-data_tbl_load_fn(candidate_hub_file)
@@ -120,7 +120,8 @@ for(tmp_res in tmp_res_set){
   gg_tmp<-tmp_res_tbl%>%ggplot(.,aes(zscore,color=hub.io))+geom_density()
   ggsave("~/data_transfer/test.png",gg_tmp)
   
+  save(tmp_res_tbl,file = paste0("~/data_transfer/candidate_trans_DAGGER_hub/io_hub_out_tbl/CAGE/H1/H1_io_zscore_",tmp_res,"_tbl.Rda"))
   
   
   
-  }
+}
