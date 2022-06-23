@@ -118,7 +118,7 @@ for(tmp_res in tmp_res_set){
   
   tmp_res_tbl<-do.call(bind_rows,io_dat_l)
   gg_tmp<-tmp_res_tbl%>%ggplot(.,aes(zscore,color=hub.io))+geom_density()
-  ggsave("~/data_transfer/test.png",gg_tmp)
+  ggsave("~/data_transfer/test2.png",gg_tmp)
   
   save(tmp_res_tbl,file = paste0("~/data_transfer/candidate_trans_DAGGER_hub/io_hub_out_tbl/CAGE/H1/H1_io_zscore_",tmp_res,"_tbl.Rda"))
   
